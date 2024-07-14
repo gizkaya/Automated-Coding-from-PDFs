@@ -1,14 +1,3 @@
----
-title: "PdfScrapingProject"
-author: "Gizem Kaya"
-date: "2024-07-12"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 ```{r}
 #(Load the necessary libraries; if you don't have them, first install them by removing the hashtag from the code below.)
 #install.packages(c("pdftools", "tidyverse", "stringr", "dplyr", "readr", "openxlsx"))
