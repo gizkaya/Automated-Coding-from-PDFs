@@ -1,0 +1,124 @@
+---
+title: "PdfScrapingProject"
+author: "Gizem Kaya"
+date: "2024-07-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#(Load the necessary libraries; if you don't have them, first install them by removing the hashtag from the code below.)
+#install.packages(c("pdftools", "tidyverse", "stringr", "dplyr", "readr", "openxlsx"))
+
+library(pdftools)
+library(tidyverse)
+library(stringr)
+library(dplyr)
+library(readr)
+library(openxlsx)
+```
+
+
+```{r}
+#Assume that you have a folder on your desktop containing the PDF documents that you want to automatically extract and code some information. For example, they can be news containing titles, dates, and sources. 
+
+# Path to the folder containing the PDF files (Find your file's path and change the code line below.)
+pdf_folder <- "/Users/username/Desktop/PDFfilename/"
+
+# Get a list of PDF files in the folder
+pdf_files <- list.files(pdf_folder, pattern = "\\.pdf$", full.names = TRUE)
+
+# Create an empty list to store data frames for each PDF file
+pdf_dfs <- list()
+
+# Loop through each PDF file
+for (pdf_file in pdf_files) {
+  # Extract text from the PDF file
+  pdf_text_all <- pdf_text(pdf_file)
+  
+# Exclude the first page (Within the scope of my project, I removed the first pages of each PDF, you can modify it or delete this line! But don't forget to change the name of the following line accordingly)   
+  pdf_text <- pdf_text_all[-1]
+  
+  # Convert the text to a single string
+  pdf_text_combined <- paste(pdf_text, collapse = "\n")
+  
+  # Create a dataframe with the text and file name
+  pdf_df <- data.frame(text = pdf_text_combined, file_name = basename(pdf_file))
+  
+  # Append the dataframe to the list
+  pdf_dfs[[pdf_file]] <- pdf_df
+}
+
+# Combine dataframes into a single dataframe
+combined_news <- do.call(rbind, pdf_dfs)
+
+# Print the combined dataframe
+print(combined_news)
+```
+
+
+```{r}
+#Extract titles from PDF texts and write them in a separate column
+combined_news$titles <- str_extract(combined_news$text, "^[^\n]+(?:\n[^\n]+)?")
+```
+
+
+```{r}
+# Pattern to match the date
+pattern_date <- "(?:January|February|March|April|May|June|July|August|September|October|November|December) \\d{1,2}, \\d{4}"
+
+# Creating the date column 
+# Extract the date using regex and write them in a separate column
+combined_news$date <- str_extract(combined_news$text, pattern_date)
+```
+
+```{r}
+#Text Cleaning Process: With the below code, I deleted white spaces and created a new column that contains a clean version of texts.
+#Remove white spaces and create a new column called "clean_text" for them.
+combined_news$clean_text <- gsub("\\s+", " ", combined_news$text)
+```
+
+
+```{r}
+#Assume that every news item in your folder has a similar pattern and that you only want to extract the news content after the word "Main" and before the word "Final." (Note: These words can change in your texts, and you can modify them accordingly, or you just don't apply this code)
+
+combined_news$clean_text <- str_extract(str_extract(combined_news$clean_text, ".*(?=Main)"), "(?<=Final).*")
+
+#Print it to see specific PDF text
+print(combined_news$clean_text[3])
+```
+
+
+```{r}
+#Now, let's extract some sentences that include only some specific words. In this project, I only focus on words related to the economic aspect. Thus, the below code only gives sentences that include these words separately or together.   
+type_econ <- c("economic development", "finance", "investment", "economy")
+
+#Function to check whether these texts include these specific words.
+check_econ <- function(text) {
+  grepl(paste(type_econ, collapse = "|"), tolower(text))
+}
+
+# Apply the function to the text column and create a new column
+combined_news$type_econ <- as.integer(sapply(combined_news$clean_text, check_econ))
+```
+
+
+```{r}
+# Create the regular expression pattern
+pattern_econ <- paste0("(?i).*\\b(", paste(type_econ, collapse = "|"), ")\\b.*")
+
+# Extract the sentence containing "type_econ"
+combined_news$economic_descrip <- regmatches(combined_news$clean_text, gregexpr(pattern_econ, combined_news$clean_text, perl = TRUE))
+
+print(combined_news$economic_descrip[1])
+```
+
+```{r}
+#Save as an Excel file
+write.xlsx(combined_news, "combined_news.xlsx")
+```
+
+
