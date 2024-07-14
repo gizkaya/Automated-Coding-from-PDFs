@@ -109,5 +109,3 @@ print(combined_news$economic_descrip[1])
 #Save as an Excel file
 write.xlsx(combined_news, "combined_news.xlsx")
 ```
-
-
