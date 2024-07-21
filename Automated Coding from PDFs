@@ -85,3 +85,6 @@ print(combined_news$economic_descrip[1])
 
 #Save as an Excel file
 write.xlsx(combined_news, "combined_news.xlsx")
+
+#Save as a CSV file
+write.csv(combined_news, "combined_news.csv", row.names=FALSE)
